@@ -1,0 +1,51 @@
+<!-- Not written by developers, generated and refined by/with AI -->>
+{% extends "base.html" %}
+{% block title %}Create account{% endblock %}
+
+{% block content %}
+<section class="panel" aria-labelledby="page-title">
+  {% include "_island.html" %}
+  <h1 id="page-title">Create your account</h1>
+  <p class="lead">Choose a username and password to save your progress.</p>
+
+  <form method="POST" action="{{ url_for('register') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="field">
+      <label for="username">Choose a username</label>
+      <p class="hint" id="username-hint">6 to 35 characters. Letters, numbers, and underscores only. Capital letters are saved as lowercase.</p>
+      <input id="username" name="username" type="text" required autofocus
+             minlength="6" maxlength="35" pattern="[A-Za-z0-9_]{6,35}"
+             title="6 to 35 letters, numbers, or underscores"
+             autocomplete="username" autocapitalize="none" spellcheck="false"
+             aria-describedby="username-hint">
+    </div>
+
+    <div class="field">
+      <label for="password">Choose a password</label>
+      <p class="hint" id="password-hint">10 to 80 characters, with at least one symbol such as ! or ?</p>
+      <input id="password" name="password" type="password" required
+             minlength="10" maxlength="80"
+             autocomplete="new-password" aria-describedby="password-hint">
+      <label class="check">
+        <input type="checkbox" id="show-password">
+        Show password
+      </label>
+    </div>
+
+    <button class="btn" type="submit">Create account</button>
+  </form>
+
+  <p class="switch">Already have an account? <a href="{{ url_for('login') }}">Log in</a></p>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const toggle = document.getElementById("show-password");
+  const field = document.getElementById("password");
+  toggle.addEventListener("change", () => {
+    field.type = toggle.checked ? "text" : "password";
+  });
+</script>
+{% endblock %}

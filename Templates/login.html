@@ -1,0 +1,45 @@
+<!-- Not written by developers, generated and refined by/with AI -->>
+ {% extends "base.html" %}
+{% block title %}Log in{% endblock %}
+
+{% block content %}
+<section class="panel" aria-labelledby="page-title">
+  {% include "_island.html" %}
+  <h1 id="page-title">Welcome back</h1>
+  <p class="lead">Log in to pick up where you left off.</p>
+
+  <form method="POST" action="{{ url_for('login') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="field">
+      <label for="username">Username</label>
+      <input id="username" name="username" type="text" required autofocus
+             autocomplete="username" autocapitalize="none" spellcheck="false">
+    </div>
+
+    <div class="field">
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" required
+             autocomplete="current-password">
+      <label class="check">
+        <input type="checkbox" id="show-password">
+        Show password
+      </label>
+    </div>
+
+    <button class="btn" type="submit">Log in</button>
+  </form>
+
+  <p class="switch">New here? <a href="{{ url_for('register') }}">Create an account</a></p>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const toggle = document.getElementById("show-password");
+  const field = document.getElementById("password");
+  toggle.addEventListener("change", () => {
+    field.type = toggle.checked ? "text" : "password";
+  });
+</script>
+{% endblock %}

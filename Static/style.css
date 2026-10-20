@@ -1,0 +1,242 @@
+/* Not written by developers, generated and refined by/with AI */
+:root {
+  color-scheme: dark;
+
+  --bg: #050d17;
+  --sunset-top: #6a5bd8;
+  --sunset-mid: #d9468f;
+  --sunset-low: #ffb347;
+  --panel: #0b1d31;
+  --field: #040b13;
+  --text: #ffffff;
+  --muted: #b9cde0;
+  --line: #6f8faa;
+  --edge: #3b7fa0;
+  --cyan: #5fd4e8;
+  --link: #8be6f4;
+  --btn: #0f7396;
+  --btn-hover: #0a5a7a;
+
+  --error: #ffd9d4;
+  --error-bg: #3b1519;
+  --error-edge: #ff7a6b;
+  --ok: #d2f7e0;
+  --ok-bg: #0f3a28;
+  --ok-edge: #4fd18b;
+
+  --mono: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { background: var(--bg); }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--text);
+  font-family: "Segoe UI", Verdana, system-ui, sans-serif;
+  font-size: 1.125rem;
+  line-height: 1.6;
+}
+
+/* Faint chart grid tinted like a sunset over the sea:
+   violet at the top, amber at the horizon. It sits behind everything
+   and the form panel is solid, so no text is ever drawn over it. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(to bottom, var(--sunset-top), var(--sunset-mid) 55%, var(--sunset-low));
+  opacity: 0.28;
+  -webkit-mask-image:
+    linear-gradient(#000 1px, transparent 1px),
+    linear-gradient(90deg, #000 1px, transparent 1px);
+  mask-image:
+    linear-gradient(#000 1px, transparent 1px),
+    linear-gradient(90deg, #000 1px, transparent 1px);
+  -webkit-mask-size: 44px 44px;
+  mask-size: 44px 44px;
+}
+
+@media (forced-colors: active) {
+  body::before { display: none; }
+}
+
+a {
+  color: var(--link);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px var(--cyan);
+}
+
+/* ---- header ---- */
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+}
+
+.brand {
+  font-family: var(--mono);
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text);
+  text-decoration: none;
+}
+
+/* ---- flash messages ---- */
+.flashes {
+  width: min(100% - 2rem, 32rem);
+  margin: 0.5rem auto 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.flash {
+  padding: 0.85rem 1rem;
+  color: var(--text);
+  background: var(--panel);
+  border: 2px solid var(--cyan);
+  border-left-width: 8px;
+  border-radius: 8px;
+}
+
+.flash.error   { color: var(--error); background: var(--error-bg); border-color: var(--error-edge); }
+.flash.success { color: var(--ok);    background: var(--ok-bg);    border-color: var(--ok-edge); }
+
+/* ---- form panel ---- */
+.panel {
+  width: min(100% - 2rem, 32rem);
+  margin: 1rem auto 3rem;
+  padding: 2rem 1.75rem;
+  background: var(--panel);
+  border: 2px solid var(--edge);
+  border-radius: 12px;
+}
+
+@media (max-width: 30rem) {
+  .panel { padding: 1.5rem 1.1rem; }
+}
+
+.island {
+  display: block;
+  width: 9.5rem;
+  height: auto;
+  margin: 0 auto 1rem;
+}
+.island .sun   { fill: #f6c85f; }
+.island .sand  { fill: #d9b974; }
+.island .trunk { fill: none; stroke: #b9884f; stroke-width: 3.5; stroke-linecap: round; }
+.island .frond { fill: none; stroke: #4fc79a; stroke-width: 3.2; stroke-linecap: round; }
+.island .wave  { fill: none; stroke: var(--cyan); stroke-width: 3; stroke-linecap: round; }
+
+h1 {
+  margin: 0 0 0.5rem;
+  font-family: var(--mono);
+  font-size: 1.75rem;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.lead {
+  margin: 0 0 1.75rem;
+  text-align: center;
+  color: var(--muted);
+}
+
+/* ---- fields ---- */
+.field { margin-bottom: 1.5rem; }
+
+.field > label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-weight: 700;
+}
+
+.hint {
+  margin: 0 0 0.6rem;
+  font-size: 1rem;
+  color: var(--muted);
+}
+
+input[type="text"],
+input[type="password"] {
+  width: 100%;
+  min-height: 3.25rem;
+  padding: 0.6rem 0.85rem;
+  font: inherit;
+  color: var(--text);
+  background: var(--field);
+  border: 2px solid var(--line);
+  border-radius: 8px;
+}
+
+/* keep browser autofill dark with white text */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text);
+  caret-color: var(--text);
+  box-shadow: 0 0 0 1000px var(--field) inset;
+}
+input:-webkit-autofill:focus-visible {
+  box-shadow: 0 0 0 1000px var(--field) inset, 0 0 0 6px var(--cyan);
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.75rem;
+  cursor: pointer;
+}
+.check input {
+  width: 1.5rem;
+  height: 1.5rem;
+  accent-color: var(--cyan);
+}
+
+/* ---- buttons ---- */
+.btn {
+  display: block;
+  width: 100%;
+  min-height: 3.5rem;
+  padding: 0.75rem 1rem;
+  font: inherit;
+  font-weight: 700;
+  color: #ffffff;
+  background: var(--btn);
+  border: 2px solid var(--cyan);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.btn:hover { background: var(--btn-hover); border-color: #ffffff; }
+
+.btn-quiet {
+  width: auto;
+  min-height: 2.75rem;
+  padding: 0.4rem 1rem;
+  background: transparent;
+  border-color: var(--line);
+}
+.btn-quiet:hover { background: rgba(255, 255, 255, 0.12); border-color: #ffffff; }
+
+/* ---- switch between login and register ---- */
+.switch {
+  margin: 1.75rem 0 0;
+  padding-top: 1.25rem;
+  border-top: 2px solid #234560;
+  text-align: center;
+}
