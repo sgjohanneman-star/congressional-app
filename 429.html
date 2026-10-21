@@ -1,0 +1,19 @@
+<!-- Not written by developers, generated and refined by/with AI -->>
+{% extends "base.html" %}
+{% block title %}Please wait a moment{% endblock %}
+
+{% block content %}
+<section class="panel" aria-labelledby="page-title">
+  {% include "_island.html" %}
+  <h1 id="page-title">Please wait a moment</h1>
+  <p class="lead">There have been a lot of attempts in a short while. This limit helps keep accounts safe. Please wait about a minute, then try again.</p>
+
+  <div class="actions">
+    {% if session.get('user_id') %}
+      <a class="btn" href="{{ url_for('hub') }}">Back to my islands</a>
+    {% else %}
+      <a class="btn" href="{{ url_for('login') }}">Back to log in</a>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

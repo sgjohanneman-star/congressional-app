@@ -19,6 +19,9 @@
     {% endif %}
     {% if points_awarded %}
       <p class="points">+{{ points_awarded }} points</p>
+      {% if was_replay %}
+        <p>You have answered this one correctly before, so a replay earns half points.</p>
+      {% endif %}
     {% endif %}
   </div>
 

@@ -11,6 +11,7 @@ from sqlalchemy.exc import IntegrityError
 from dotenv import load_dotenv
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from sqlalchemy import update
 
 
 load_dotenv()
@@ -19,12 +20,14 @@ def today_utc():
     return datetime.now(timezone.utc).date()
 
 
+
+
 app = Flask(__name__)
 limiter = Limiter(get_remote_address,app=app)
 
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///quiz.db"
 #need to replace the key later
-app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY","burned_replace_later")
+app.config["SECRET_KEY"] = os.environ["SECRET_KEY"]
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(minutes=30)
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
@@ -44,12 +47,20 @@ def handle_csrf_error(error):
     flash("That page is expired. Please try again","error")
     return redirect(url_for("login"))
 
+@app.errorhandler(429)
+def handle_rate_limit(error):
+    return render_template("429.html"), 429
+
 csrf = CSRFProtect(app)
 
 db = SQLAlchemy(app)
 
 
 points_per_question = 10
+points_per_question_replay = points_per_question//2
+
+
+
 
 
 class User(db.Model):
@@ -90,6 +101,10 @@ class QuestionResult(db.Model):
     last_answered_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
     __table_args__ = (db.UniqueConstraint("user_id", "question_id", name="one_result_per_user_and_question"),)
 
+
+
+
+
 with app.app_context():
     db.create_all()
 
@@ -127,15 +142,18 @@ def island_status(progress, total):
 @login_required
 def hub():
     for island in Island.query.all():
-        prog = UserIslandProgress.query.filter_by(user_id=g.user.id, island_id=island.id).first_or_404()
+        prog = UserIslandProgress.query.filter_by(user_id=g.user.id, island_id=island.id).first()
+        if prog is None:
+            prog = UserIslandProgress(user_id=g.user.id, island_id=island.id,progress=0, last_decay_date=today_utc())
+        db.session.add(prog)
         apply_decay(prog)
     rows = (db.session.query(UserIslandProgress, Island).join(Island, UserIslandProgress.island_id == Island.id).filter(UserIslandProgress.user_id == g.user.id).order_by(Island.slot).all())
     islands = []
     for prog, island in rows:
         total = len(island.questions)
         islands.append({
-            "slot": island.slot,
-            "name": island.name,
+        "slot": island.slot,
+        "name": island.name,
         "description": island.description,
         "progress": prog.progress,
         "total": total,
@@ -188,7 +206,7 @@ def register():
 
 
 @app.route("/login", methods=["GET","POST"])
-@limiter.limit("10 per minute", methods="POST")
+@limiter.limit("10 per minute", methods=["POST"])
 def login():
     if session.get("user_id"):
         return redirect(url_for("hub"))
@@ -215,21 +233,15 @@ def logout():
 
 def pick_question(user_id, island):
     recent_rows = (
-    QuestionResult.query
-    .join(Question, QuestionResult.question_id == Question.id)
-    .filter(QuestionResult.user_id == user_id, Question.island_id == island.id)
-    .order_by(QuestionResult.last_answered_at.desc())
-    .limit(5)
-    .all()
-)
+    QuestionResult.query.join(Question, QuestionResult.question_id == Question.id).filter(QuestionResult.user_id == user_id, Question.island_id == island.id).order_by(QuestionResult.last_answered_at.desc()).limit(5).all())
     recent_ids = [r.question_id for r in recent_rows]
-    eligible = Question.query.filter(
-    Question.island_id == island.id,
-    Question.id.notin_(recent_ids),
-).all()
+    eligible = Question.query.filter(Question.island_id == island.id,Question.id.notin_(recent_ids),).all()
+    if not eligible:
+        eligible = island.questions
     return random.choice(eligible)
 
 @app.route("/island/<int:slot>", methods=["GET", "POST"])
+@limiter.limit("60 per minute",methods=["POST"])
 @login_required
 def island_question(slot):
     island = Island.query.filter_by(slot=slot).first_or_404()
@@ -246,32 +258,41 @@ def island_question(slot):
         answer = request.form.get("choice",type=int)
         if answer is None or not 0 <= answer < len(question.choices):
             flash("Not a valid answer to the question.","error")
-            return redirect(url_for("island_question"))
+            return redirect(url_for("island_question",slot=slot))
         submitted_id = request.form.get("question_id",type=int)
         if submitted_id != prog.current_question_id:
             flash("Question submitted does not match current question.","error")
             return redirect(url_for("island_question", slot=slot))
+        claimed = db.session.execute(update(UserIslandProgress).where(UserIslandProgress.id == prog.id,UserIslandProgress.current_question_id == question.id).values(current_question_id=None)).rowcount
         is_correct = answer == question.correct_answer
         result = QuestionResult.query.filter_by(user_id=g.user.id,question_id=question.id).first()
+        points = 0
         if result is None:
             result = QuestionResult(user_id=g.user.id,question_id=question.id)
             db.session.add(result)
+        already_earned = bool(result.correctly_answered)
         result.last_answered_at = datetime.now(timezone.utc)
         if is_correct:
+            points = points_per_question_replay if already_earned else points_per_question
             result.correctly_answered = True
         old_progress = prog.progress
         if is_correct:
             prog.progress = min(prog.progress + 1, total)
-            g.user.total_points += points_per_question
+            g.user.total_points = User.total_points + points
+        was_replay = is_correct and bool(already_earned)
+        if claimed == 0:
+            db.session.rollback()
+            flash("Question was already answered.", "error")
+            return redirect(url_for("island_question", slot=slot))
         just_completed = is_correct and old_progress < total and prog.progress == total
-        prog.current_question_id = None
         session["last_result"] = {
         "slot": slot,
         "chosen_text": question.choices[answer],
         "correct_text": question.choices[question.correct_answer],
         "was_correct": is_correct,
-        "points": points_per_question if is_correct else 0,
+        "points": points,
         "just_completed": just_completed,
+        "was_replay": was_replay,
         }
         db.session.commit()
         return redirect(url_for("island_feedback",slot=slot))
@@ -286,7 +307,7 @@ def island_feedback(slot):
     island = Island.query.filter_by(slot=slot).first_or_404()
     prog = UserIslandProgress.query.filter_by(user_id=g.user.id, island_id=island.id).first_or_404()
     total = len(island.questions)
-    return render_template("feedback.html",island_name=island.name,slot=slot,was_correct=result["was_correct"],chosen_text=result["chosen_text"],correct_text=result["correct_text"],points_awarded=result["points"],progress=prog.progress,total=total,just_completed=result["just_completed"])
+    return render_template("feedback.html",island_name=island.name,slot=slot,was_correct=result["was_correct"],chosen_text=result["chosen_text"],correct_text=result["correct_text"],points_awarded=result["points"],progress=prog.progress,total=total,just_completed=result["just_completed"],was_replay=result.get("was_replay",False))
 
 
 @app.route("/island/<int:slot>/complete", methods=["GET"])
@@ -305,5 +326,6 @@ def island_complete(slot):
 
 
 if(__name__ == "__main__"):
-    #Remove debug on production
-    app.run(debug=True)
+    #add debug=True is solo locally testing
+    
+    app.run()
