@@ -1,0 +1,61 @@
+<!-- Not written by developers, generated and refined by/with AI -->>
+{% extends "base.html" %}
+{% block title %}Your islands{% endblock %}
+
+{% macro island_card(isl) %}
+<li>
+  <a class="island-card {{ isl.status }}" href="{{ url_for('island_question', slot=isl.slot) }}">
+    <h2>{{ isl.name }}</h2>
+    <p>{{ isl.description }}</p>
+    <p class="status">
+      {% if isl.status == 'completed' %}<span aria-hidden="true">✓</span> Restored
+      {% elif isl.status == 'in_progress' %}In progress
+      {% else %}Not started{% endif %}
+    </p>
+    <progress class="meter" value="{{ isl.progress }}" max="{{ isl.total or 1 }}"
+              aria-label="Progress on {{ isl.name }}">{{ isl.progress }} of {{ isl.total }}</progress>
+    <p class="count">{{ isl.progress }} of {{ isl.total }} questions</p>
+    <span class="cta">
+      {% if isl.status == 'completed' %}Practice again
+      {% elif isl.status == 'in_progress' %}Continue
+      {% else %}Start{% endif %}
+    </span>
+  </a>
+</li>
+{% endmacro %}
+
+{% block content %}
+{% set count = islands | length %}
+{% set restored = islands | selectattr('status', 'equalto', 'completed') | list | length %}
+{% set half = (count / 2) | round(0, 'ceil') | int %}
+
+<div class="hub">
+  <div class="map">
+    <section class="home" aria-labelledby="hub-title">
+      {% include "_island.html" %}
+      <h1 id="hub-title">Welcome, {{ username }}</h1>
+      <p class="lead">Choose an island that needs your help.</p>
+
+      <p class="home-stat">Islands restored: <strong>{{ restored }} of {{ count }}</strong></p>
+      <progress class="meter" value="{{ restored }}" max="{{ count or 1 }}"
+                aria-label="Islands restored">{{ restored }} of {{ count }}</progress>
+
+      <p class="home-stat">Total points: <strong>{{ total_points }}</strong></p>
+    </section>
+
+    {% if islands %}
+    <ol class="island-list left" aria-label="Islands 1 to {{ half }}">
+      {% for isl in islands[:half] %}{{ island_card(isl) }}{% endfor %}
+    </ol>
+
+    {% if islands[half:] %}
+    <ol class="island-list right" aria-label="Islands {{ half + 1 }} to {{ count }}">
+      {% for isl in islands[half:] %}{{ island_card(isl) }}{% endfor %}
+    </ol>
+    {% endif %}
+    {% else %}
+    <p class="lead">No islands are available yet.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

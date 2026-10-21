@@ -15,6 +15,10 @@ from flask_limiter.util import get_remote_address
 
 load_dotenv()
 
+def today_utc():
+    return datetime.now(timezone.utc).date()
+
+
 app = Flask(__name__)
 limiter = Limiter(get_remote_address,app=app)
 
@@ -75,7 +79,7 @@ class UserIslandProgress(db.Model):
     island_id = db.Column(db.Integer,db.ForeignKey("island.id"), nullable=False)
     current_question_id = db.Column(db.Integer,db.ForeignKey("question.id"))
     progress = db.Column(db.Integer, nullable=False, default=0)
-    last_decay_date = db.Column(db.Date, default=date.today)
+    last_decay_date = db.Column(db.Date, default=today_utc)
     __table_args__ = (db.UniqueConstraint("user_id", "island_id", name="one_progress_per_user_and_island"),)
 
 class QuestionResult(db.Model):
@@ -105,12 +109,41 @@ def login_required(view):
         return view(*args, **kwargs)
     return wrapped
 
+def apply_decay(prog):
+    days_away = (today_utc() - prog.last_decay_date).days
+    if days_away > 0:
+        prog.progress = max(0,prog.progress-days_away)
+        prog.last_decay_date = today_utc()
+
+def island_status(progress, total):
+    if progress >= total:
+        return "completed"
+    if progress > 0:
+        return "in_progress"
+    return "not_started"
 
 
 @app.route("/")
 @login_required
 def hub():
-    return f"Hi, {g.user.username}!"
+    for island in Island.query.all():
+        prog = UserIslandProgress.query.filter_by(user_id=g.user.id, island_id=island.id).first_or_404()
+        apply_decay(prog)
+    rows = (db.session.query(UserIslandProgress, Island).join(Island, UserIslandProgress.island_id == Island.id).filter(UserIslandProgress.user_id == g.user.id).order_by(Island.slot).all())
+    islands = []
+    for prog, island in rows:
+        total = len(island.questions)
+        islands.append({
+            "slot": island.slot,
+            "name": island.name,
+        "description": island.description,
+        "progress": prog.progress,
+        "total": total,
+        "status": island_status(prog.progress, total),
+        })
+    db.session.commit()
+    
+    return render_template("hub.html", username=g.user.username,total_points=g.user.total_points, islands=islands)
 
 
 @app.route("/register", methods=["GET","POST"])
@@ -201,6 +234,8 @@ def pick_question(user_id, island):
 def island_question(slot):
     island = Island.query.filter_by(slot=slot).first_or_404()
     prog = UserIslandProgress.query.filter_by(user_id=g.user.id, island_id=island.id).first_or_404()
+    apply_decay(prog)
+    db.session.commit()
     total = len(island.questions)
     if prog.current_question_id is None:
         prog.current_question_id = pick_question(g.user.id, island).id

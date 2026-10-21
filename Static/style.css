@@ -390,3 +390,96 @@ a.btn {
   text-align: center;
   font-size: 1.25rem;
 }
+
+/* =====================================================
+   Hub (home island with the other islands around it)
+   ===================================================== */
+.hub {
+  width: min(100% - 2rem, 72rem);
+  margin: 0.5rem auto 3rem;
+}
+
+.map {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.home {
+  padding: 1.75rem 1.25rem;
+  text-align: center;
+  background: var(--panel);
+  border: 2px solid var(--edge);
+  border-radius: 12px;
+}
+.home .island { width: 11rem; }
+.home h1 { font-size: 1.6rem; overflow-wrap: anywhere; }
+.home .lead { margin-bottom: 1.25rem; }
+.home-stat { margin: 0 0 0.4rem; }
+.home .meter { max-width: 22rem; margin: 0.4rem auto 1.25rem; }
+
+.island-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1.25rem;
+  align-content: center;
+}
+
+/* tablets: home island on top, the two island lists side by side */
+@media (min-width: 40rem) and (max-width: 61.99rem) {
+  .map { grid-template-columns: 1fr 1fr; }
+  .home { grid-column: 1 / -1; }
+}
+
+/* wide screens: one column of islands on each side of the home island */
+@media (min-width: 62rem) {
+  .map {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr) minmax(0, 1fr);
+    align-items: center;
+  }
+  .island-list.left  { grid-column: 1; grid-row: 1; }
+  .home              { grid-column: 2; grid-row: 1; }
+  .island-list.right { grid-column: 3; grid-row: 1; }
+
+  /* nudge the top and bottom cards inward so the islands curve around the home island */
+  .island-list.left  li:nth-child(odd) { margin-right: 1.5rem; }
+  .island-list.right li:nth-child(odd) { margin-left: 1.5rem; }
+}
+
+.island-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  height: 100%;
+  padding: 1.25rem;
+  color: var(--text);
+  font-weight: 400;
+  text-decoration: none;
+  background: var(--panel);
+  border: 2px solid var(--edge);
+  border-radius: 12px;
+}
+.island-card:hover { border-color: #ffffff; }
+.island-card h2 {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 1.2rem;
+  line-height: 1.3;
+}
+.island-card p { margin: 0; font-size: 1rem; color: var(--muted); }
+.island-card .status { font-weight: 700; color: var(--text); }
+.island-card .count { font-size: 0.95rem; }
+.island-card .meter { height: 0.9rem; margin-bottom: 0; }
+.island-card .cta {
+  margin-top: auto;
+  padding-top: 0.5rem;
+  font-weight: 700;
+  color: var(--link);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.island-card.in_progress { border-color: var(--cyan); }
+.island-card.completed   { border-color: var(--ok-edge); }
+.island-card.completed .status { color: var(--ok); }
