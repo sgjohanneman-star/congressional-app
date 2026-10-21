@@ -1,0 +1,36 @@
+<!-- Not written by developers, generated and refined by/with AI -->>
+{% extends "base.html" %}
+{% block title %}{{ 'Correct' if was_correct else 'Not quite' }} · {{ island_name }}{% endblock %}
+
+{% block content %}
+<section class="panel panel-wide" aria-labelledby="verdict-title">
+  <p class="island-label">{{ island_name }}</p>
+
+  <div class="verdict {{ 'correct' if was_correct else 'incorrect' }}">
+    <h1 id="verdict-title">
+      <span class="verdict-icon" aria-hidden="true">{{ '✓' if was_correct else '✕' }}</span>
+      {{ 'Correct!' if was_correct else 'Not quite' }}
+    </h1>
+    {% if was_correct %}
+      <p>Well done. <strong>{{ chosen_text }}</strong> is right.</p>
+    {% else %}
+      <p>You chose: <strong>{{ chosen_text }}</strong></p>
+      <p>The correct answer is: <strong>{{ correct_text }}</strong></p>
+    {% endif %}
+    {% if points_awarded %}
+      <p class="points">+{{ points_awarded }} points</p>
+    {% endif %}
+  </div>
+
+  {% include "_meter.html" %}
+
+  <div class="actions">
+    {% if just_completed %}
+      <a class="btn" href="{{ url_for('island_complete', slot=slot) }}" autofocus>Island restored! See results</a>
+    {% else %}
+      <a class="btn" href="{{ url_for('island_question', slot=slot) }}" autofocus>Next question</a>
+    {% endif %}
+    <a class="btn btn-secondary" href="{{ url_for('hub') }}">Back to islands</a>
+  </div>
+</section>
+{% endblock %}

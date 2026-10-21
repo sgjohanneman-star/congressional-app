@@ -1,0 +1,20 @@
+<!-- Not written by developers, generated and refined by/with AI -->>
+{% extends "base.html" %}
+{% block title %}Island restored · {{ island_name }}{% endblock %}
+
+{% block content %}
+<section class="panel" aria-labelledby="page-title">
+  {% include "_island.html" %}
+  <h1 id="page-title">{{ island_name }} is restored!</h1>
+  <p class="lead">Thank you for helping this island.</p>
+
+  {% include "_meter.html" %}
+
+  <p class="total">Your total points: <strong>{{ total_points }}</strong></p>
+
+  <div class="actions">
+    <a class="btn" href="{{ url_for('island_question', slot=slot) }}">Keep practicing</a>
+    <a class="btn btn-secondary" href="{{ url_for('hub') }}">Back to islands</a>
+  </div>
+</section>
+{% endblock %}

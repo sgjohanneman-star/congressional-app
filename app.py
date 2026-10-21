@@ -1,9 +1,10 @@
 #App File
 from flask import Flask, session, request, redirect, url_for, render_template, flash, g
 from flask_sqlalchemy import SQLAlchemy
-from flask_wtf.csrf import CSRFProtect
+from flask_wtf.csrf import CSRFProtect, CSRFError
 from datetime import date,datetime,timezone,timedelta
 import os,re
+import random
 from werkzeug.security import generate_password_hash,check_password_hash
 from functools import wraps
 from sqlalchemy.exc import IntegrityError
@@ -18,6 +19,7 @@ app = Flask(__name__)
 limiter = Limiter(get_remote_address,app=app)
 
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///quiz.db"
+#need to replace the key later
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY","burned_replace_later")
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(minutes=30)
 app.config["SESSION_COOKIE_HTTPONLY"] = True
@@ -33,13 +35,17 @@ def set_security_headers(response):
     response.headers["Cache-Control"] = "no-store"
     return response
 
+@app.errorhandler(CSRFError)
+def handle_csrf_error(error):
+    flash("That page is expired. Please try again","error")
+    return redirect(url_for("login"))
 
 csrf = CSRFProtect(app)
 
 db = SQLAlchemy(app)
 
 
-
+points_per_question = 10
 
 
 class User(db.Model):
@@ -109,6 +115,8 @@ def hub():
 
 @app.route("/register", methods=["GET","POST"])
 def register():
+    if session.get("user_id"):
+        return redirect(url_for("hub"))
     if(request.method == "POST"):
         username = request.form.get("username","").strip().lower()
         password = request.form.get("password","")
@@ -149,6 +157,8 @@ def register():
 @app.route("/login", methods=["GET","POST"])
 @limiter.limit("10 per minute", methods="POST")
 def login():
+    if session.get("user_id"):
+        return redirect(url_for("hub"))
     if(request.method == "POST"):
         username = request.form.get("username","").strip().lower()
         password = request.form.get("password","")
@@ -163,10 +173,99 @@ def login():
     return render_template("login.html")
 
 
+
 @app.route("/logout", methods=["POST"])
+@login_required
 def logout():
     session.clear()
     return redirect(url_for("login"))
+
+def pick_question(user_id, island):
+    recent_rows = (
+    QuestionResult.query
+    .join(Question, QuestionResult.question_id == Question.id)
+    .filter(QuestionResult.user_id == user_id, Question.island_id == island.id)
+    .order_by(QuestionResult.last_answered_at.desc())
+    .limit(5)
+    .all()
+)
+    recent_ids = [r.question_id for r in recent_rows]
+    eligible = Question.query.filter(
+    Question.island_id == island.id,
+    Question.id.notin_(recent_ids),
+).all()
+    return random.choice(eligible)
+
+@app.route("/island/<int:slot>", methods=["GET", "POST"])
+@login_required
+def island_question(slot):
+    island = Island.query.filter_by(slot=slot).first_or_404()
+    prog = UserIslandProgress.query.filter_by(user_id=g.user.id, island_id=island.id).first_or_404()
+    total = len(island.questions)
+    if prog.current_question_id is None:
+        prog.current_question_id = pick_question(g.user.id, island).id
+        db.session.commit()
+    question = db.session.get(Question,prog.current_question_id)
+
+    if request.method == "POST":
+        answer = request.form.get("choice",type=int)
+        if answer is None or not 0 <= answer < len(question.choices):
+            flash("Not a valid answer to the question.","error")
+            return redirect(url_for("island_question"))
+        submitted_id = request.form.get("question_id",type=int)
+        if submitted_id != prog.current_question_id:
+            flash("Question submitted does not match current question.","error")
+            return redirect(url_for("island_question", slot=slot))
+        is_correct = answer == question.correct_answer
+        result = QuestionResult.query.filter_by(user_id=g.user.id,question_id=question.id).first()
+        if result is None:
+            result = QuestionResult(user_id=g.user.id,question_id=question.id)
+            db.session.add(result)
+        result.last_answered_at = datetime.now(timezone.utc)
+        if is_correct:
+            result.correctly_answered = True
+        old_progress = prog.progress
+        if is_correct:
+            prog.progress = min(prog.progress + 1, total)
+            g.user.total_points += points_per_question
+        just_completed = is_correct and old_progress < total and prog.progress == total
+        prog.current_question_id = None
+        session["last_result"] = {
+        "slot": slot,
+        "chosen_text": question.choices[answer],
+        "correct_text": question.choices[question.correct_answer],
+        "was_correct": is_correct,
+        "points": points_per_question if is_correct else 0,
+        "just_completed": just_completed,
+        }
+        db.session.commit()
+        return redirect(url_for("island_feedback",slot=slot))
+    return render_template("quiz.html",island_name=island.name,question_text=question.text,choices=question.choices,question_id=question.id,progress=prog.progress,total=total,slot=slot)
+
+@app.route("/island/<int:slot>/feedback", methods=["GET"])
+@login_required
+def island_feedback(slot):
+    result = session.pop("last_result", None)
+    if result is None or result["slot"] != slot:
+        return redirect(url_for("island_question",slot=slot))
+    island = Island.query.filter_by(slot=slot).first_or_404()
+    prog = UserIslandProgress.query.filter_by(user_id=g.user.id, island_id=island.id).first_or_404()
+    total = len(island.questions)
+    return render_template("feedback.html",island_name=island.name,slot=slot,was_correct=result["was_correct"],chosen_text=result["chosen_text"],correct_text=result["correct_text"],points_awarded=result["points"],progress=prog.progress,total=total,just_completed=result["just_completed"])
+
+
+@app.route("/island/<int:slot>/complete", methods=["GET"])
+@login_required
+def island_complete(slot):
+    island = Island.query.filter_by(slot=slot).first_or_404()
+    prog = UserIslandProgress.query.filter_by(user_id=g.user.id, island_id=island.id).first_or_404()
+    total = len(island.questions)
+
+    if(prog.progress < total):
+        return redirect(url_for("island_question",slot=slot))
+    return render_template("complete.html",island_name=island.name,slot=slot,progress=prog.progress,total=total,total_points=g.user.total_points)
+
+
 
 
 

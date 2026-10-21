@@ -1,0 +1,29 @@
+<!-- Not written by developers, generated and refined by/with AI -->>
+{% extends "base.html" %}
+{% block title %}{{ island_name }}{% endblock %}
+
+{% block content %}
+<section class="panel panel-wide" aria-labelledby="island-title">
+  <a class="crumb" href="{{ url_for('hub') }}">← Back to islands</a>
+  <h1 id="island-title" class="island-label">{{ island_name }}</h1>
+
+  {% include "_meter.html" %}
+
+  <form method="POST" action="{{ url_for('island_question', slot=slot) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="question_id" value="{{ question_id }}">
+
+    <fieldset class="question">
+      <legend>{{ question_text }}</legend>
+      {% for choice in choices %}
+      <label class="choice">
+        <input type="radio" name="choice" value="{{ loop.index0 }}" required>
+        <span>{{ choice }}</span>
+      </label>
+      {% endfor %}
+    </fieldset>
+
+    <button class="btn" type="submit">Check my answer</button>
+  </form>
+</section>
+{% endblock %}
