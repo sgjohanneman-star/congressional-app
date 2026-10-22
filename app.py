@@ -2,7 +2,7 @@
 from flask import Flask, session, request, redirect, url_for, render_template, flash, g
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect, CSRFError
-from datetime import date,datetime,timezone,timedelta
+from datetime import datetime,timezone,timedelta
 import os,re
 import random
 from werkzeug.security import generate_password_hash,check_password_hash
@@ -26,12 +26,12 @@ app = Flask(__name__)
 limiter = Limiter(get_remote_address,app=app)
 
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///quiz.db"
-#need to replace the key later
+if "SECRET_KEY" not in os.environ:
+    raise RuntimeError("SECRET_KEY is missing. Copy .env.example to .env and add a key (see README).")
 app.config["SECRET_KEY"] = os.environ["SECRET_KEY"]
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(minutes=30)
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
-#Note to self: Leave to false locally, but 1 on actual hosting platforms (pythonanywhere)
 app.config["SESSION_COOKIE_SECURE"] = os.environ.get("PRODUCTION") == "1"
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024
 
@@ -44,12 +44,21 @@ def set_security_headers(response):
 
 @app.errorhandler(CSRFError)
 def handle_csrf_error(error):
-    flash("That page is expired. Please try again","error")
+    flash("That page is expired. Please try again.","error")
     return redirect(url_for("login"))
 
 @app.errorhandler(429)
 def handle_rate_limit(error):
     return render_template("429.html"), 429
+
+@app.errorhandler(500)
+def not_found(error):
+    db.session.rollback()
+    return render_template("500.html"), 500
+
+@app.errorhandler(404)
+def server_error(error):
+    return render_template("404.html"), 404
 
 csrf = CSRFProtect(app)
 
@@ -264,6 +273,10 @@ def island_question(slot):
             flash("Question submitted does not match current question.","error")
             return redirect(url_for("island_question", slot=slot))
         claimed = db.session.execute(update(UserIslandProgress).where(UserIslandProgress.id == prog.id,UserIslandProgress.current_question_id == question.id).values(current_question_id=None)).rowcount
+        if claimed == 0:
+            db.session.rollback()
+            flash("Question was already answered.", "error")
+            return redirect(url_for("island_question", slot=slot))
         is_correct = answer == question.correct_answer
         result = QuestionResult.query.filter_by(user_id=g.user.id,question_id=question.id).first()
         points = 0
@@ -280,10 +293,7 @@ def island_question(slot):
             prog.progress = min(prog.progress + 1, total)
             g.user.total_points = User.total_points + points
         was_replay = is_correct and bool(already_earned)
-        if claimed == 0:
-            db.session.rollback()
-            flash("Question was already answered.", "error")
-            return redirect(url_for("island_question", slot=slot))
+        
         just_completed = is_correct and old_progress < total and prog.progress == total
         session["last_result"] = {
         "slot": slot,
@@ -316,7 +326,8 @@ def island_complete(slot):
     island = Island.query.filter_by(slot=slot).first_or_404()
     prog = UserIslandProgress.query.filter_by(user_id=g.user.id, island_id=island.id).first_or_404()
     total = len(island.questions)
-
+    apply_decay(prog)
+    db.session.commit()
     if(prog.progress < total):
         return redirect(url_for("island_question",slot=slot))
     return render_template("complete.html",island_name=island.name,slot=slot,progress=prog.progress,total=total,total_points=g.user.total_points)
@@ -327,5 +338,5 @@ def island_complete(slot):
 
 if(__name__ == "__main__"):
     #add debug=True is solo locally testing
-    
+
     app.run()

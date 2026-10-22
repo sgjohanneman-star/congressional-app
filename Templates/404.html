@@ -1,0 +1,19 @@
+<!-- Not written by developers, generated and refined by/with AI -->>
+{% extends "base.html" %}
+{% block title %}Page not found{% endblock %}
+
+{% block content %}
+<section class="panel" aria-labelledby="page-title">
+  {% include "_island.html" %}
+  <h1 id="page-title">Page not found</h1>
+  <p class="lead">This page is not on the map. The address may have a typo, or the page may have moved.</p>
+
+  <div class="actions">
+    {% if session.get('user_id') %}
+      <a class="btn" href="{{ url_for('hub') }}">Back to my islands</a>
+    {% else %}
+      <a class="btn" href="{{ url_for('login') }}">Back to log in</a>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

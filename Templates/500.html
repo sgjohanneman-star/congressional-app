@@ -1,0 +1,29 @@
+<!-- Not written by developers, generated and refined by/with AI -->>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#050d17">
+  <title>Something went wrong · Wayfinder</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/">Wayfinder</a>
+  </header>
+
+  <main>
+    <section class="panel" aria-labelledby="page-title">
+      {% include "_island.html" %}
+      <h1 id="page-title">Something went wrong</h1>
+      <p class="lead">That was a problem on our side, not yours. Please wait a moment and try again.</p>
+
+      <div class="actions">
+        <a class="btn" href="/">Try again</a>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

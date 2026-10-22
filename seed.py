@@ -19,9 +19,7 @@ def seed():
             if not 0 <= q["correct"] < len(choices):
                 raise ValueError(f"'correct' index out of range: {q['text']}")
 
-            question = Question.query.filter_by(
-                island_id=island.id, text=q["text"]
-            ).first()
+            question = Question.query.filter_by(island_id=island.id, text=q["text"]).first()
             if question is None:
                 question = Question(island_id=island.id, text=q["text"])
                 db.session.add(question)
