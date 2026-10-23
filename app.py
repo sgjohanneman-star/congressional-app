@@ -13,18 +13,20 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from sqlalchemy import update
 
-
+#Loading environment tools
 load_dotenv()
 
+#Creating a function to find the universal/comparable datetime
 def today_utc():
     return datetime.now(timezone.utc).date()
 
 
 
-
+#Creating the app and its limiter
 app = Flask(__name__)
 limiter = Limiter(get_remote_address,app=app)
 
+#Setting app configurations and handling missing info
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///quiz.db"
 if "SECRET_KEY" not in os.environ:
     raise RuntimeError("SECRET_KEY is missing. Copy .env.example to .env and add a key (see README).")
@@ -35,6 +37,7 @@ app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 app.config["SESSION_COOKIE_SECURE"] = os.environ.get("PRODUCTION") == "1"
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024
 
+#Post request processing to prevent cybersecurity attacks 
 @app.after_request
 def set_security_headers(response):
     response.headers["X-Content-Type-Options"] = "nosniff"
@@ -42,11 +45,13 @@ def set_security_headers(response):
     response.headers["Cache-Control"] = "no-store"
     return response
 
+#Handling a CSRF error from an alternate website
 @app.errorhandler(CSRFError)
 def handle_csrf_error(error):
     flash("That page is expired. Please try again.","error")
     return redirect(url_for("login"))
 
+#Handling each error and returning the user to a customized error page
 @app.errorhandler(429)
 def handle_rate_limit(error):
     return render_template("429.html"), 429
@@ -60,24 +65,26 @@ def not_found(error):
 def server_error(error):
     return render_template("404.html"), 404
 
+#Initializing the SQLLite database and CSRF protection
 csrf = CSRFProtect(app)
 
 db = SQLAlchemy(app)
 
-
+#Points per question variables for easy code editing
 points_per_question = 10
-points_per_question_replay = points_per_question//2
+points_per_question_replay = points_per_question // 2
 
 
 
 
-
+#Database model that holds the information for an app user
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), nullable=False, unique=True)
     password_hash = db.Column(db.String(256), nullable=False)
     total_points = db.Column(db.Integer, nullable=False, default=0)
 
+#Database model that holds the information for each of the app's islands
 class Island(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(80),unique=True, nullable=False)
@@ -85,6 +92,7 @@ class Island(db.Model):
     slot = db.Column(db.Integer,unique=True, nullable=False)
     questions = db.relationship("Question", back_populates="island")
 
+#Database model that holds the information for each of the app's questions
 class Question(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     island_id = db.Column(db.Integer, db.ForeignKey("island.id"), nullable=False,)
@@ -93,6 +101,7 @@ class Question(db.Model):
     correct_answer = db.Column(db.Integer, nullable=False)
     island = db.relationship("Island", back_populates="questions")
 
+#Database model that holds the information for user progress
 class UserIslandProgress(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer,db.ForeignKey("user.id"), nullable=False)
@@ -102,6 +111,7 @@ class UserIslandProgress(db.Model):
     last_decay_date = db.Column(db.Date, default=today_utc)
     __table_args__ = (db.UniqueConstraint("user_id", "island_id", name="one_progress_per_user_and_island"),)
 
+#Database model that holds the information for each of the app's question results
 class QuestionResult(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer,db.ForeignKey("user.id"), nullable=False)
@@ -113,12 +123,12 @@ class QuestionResult(db.Model):
 
 
 
-
+#Creating all databases when the program is run
 with app.app_context():
     db.create_all()
 
 
-#App routing + login reqs + flask
+#Ensures that a user is logged in to access a specific URL/page
 def login_required(view):
     @wraps(view)
     def wrapped(*args, **kwargs):
@@ -133,12 +143,14 @@ def login_required(view):
         return view(*args, **kwargs)
     return wrapped
 
+#Progress decay function to encourage daily activity/memorization
 def apply_decay(prog):
     days_away = (today_utc() - prog.last_decay_date).days
     if days_away > 0:
         prog.progress = max(0,prog.progress-days_away)
         prog.last_decay_date = today_utc()
 
+#Function to return the islands progress as a string
 def island_status(progress, total):
     if progress >= total:
         return "completed"
@@ -146,7 +158,7 @@ def island_status(progress, total):
         return "in_progress"
     return "not_started"
 
-
+#Route for the hub, requiring a user's login to access, showing each island, progress, and the home page.
 @app.route("/")
 @login_required
 def hub():
@@ -335,8 +347,8 @@ def island_complete(slot):
 
 
 
-
+#Runs the app if this is the main file run
 if(__name__ == "__main__"):
-    #add debug=True is solo locally testing
+    #add debug=True if locally testing alone (Never on development)
 
     app.run()
