@@ -309,15 +309,7 @@ def island_question(slot):
         was_replay = is_correct and bool(already_earned)
         
         just_completed = is_correct and old_progress < total and prog.progress == total
-        session["last_result"] = {
-        "slot": slot,
-        "chosen_text": question.choices[answer],
-        "correct_text": question.choices[question.correct_answer],
-        "was_correct": is_correct,
-        "points": points,
-        "just_completed": just_completed,
-        "was_replay": was_replay,
-        }
+        session["last_result"] = {"slot": slot,"chosen_text": question.choices[answer],"correct_text": question.choices[question.correct_answer],"was_correct": is_correct,"points": points,"just_completed": just_completed,"was_replay": was_replay,}
         db.session.commit()
         return redirect(url_for("island_feedback",slot=slot))
     return render_template("quiz.html",island_name=island.name,question_text=question.text,choices=question.choices,question_id=question.id,progress=prog.progress,total=total,slot=slot)
