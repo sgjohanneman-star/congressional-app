@@ -184,7 +184,7 @@ def hub():
     
     return render_template("hub.html", username=g.user.username,total_points=g.user.total_points, islands=islands)
 
-
+#Registration for the application, saves username and hashed password inputted
 @app.route("/register", methods=["GET","POST"])
 def register():
     if session.get("user_id"):
@@ -225,7 +225,7 @@ def register():
                 return redirect(url_for("login"))
     return render_template("register.html")
 
-
+#Login page, gets the user and hashed password, then compares to each of the names in the data base.
 @app.route("/login", methods=["GET","POST"])
 @limiter.limit("10 per minute", methods=["POST"])
 def login():
@@ -245,13 +245,14 @@ def login():
     return render_template("login.html")
 
 
-
+#Logout route, clears session data and takes the user back to the login page.
 @app.route("/logout", methods=["POST"])
 @login_required
 def logout():
     session.clear()
     return redirect(url_for("login"))
 
+#Finds eligible questions to ask and returns one to the user based on current island and previous question history
 def pick_question(user_id, island):
     recent_rows = (
     QuestionResult.query.join(Question, QuestionResult.question_id == Question.id).filter(QuestionResult.user_id == user_id, Question.island_id == island.id).order_by(QuestionResult.last_answered_at.desc()).limit(5).all())
@@ -261,6 +262,7 @@ def pick_question(user_id, island):
         eligible = island.questions
     return random.choice(eligible)
 
+#Island question route, gives the user a question that they can submit to to send an answer and get points
 @app.route("/island/<int:slot>", methods=["GET", "POST"])
 @limiter.limit("60 per minute",methods=["POST"])
 @login_required
@@ -320,6 +322,7 @@ def island_question(slot):
         return redirect(url_for("island_feedback",slot=slot))
     return render_template("quiz.html",island_name=island.name,question_text=question.text,choices=question.choices,question_id=question.id,progress=prog.progress,total=total,slot=slot)
 
+#Island feedback route, shows the user what was wrong and their current progress.
 @app.route("/island/<int:slot>/feedback", methods=["GET"])
 @login_required
 def island_feedback(slot):
@@ -331,7 +334,7 @@ def island_feedback(slot):
     total = len(island.questions)
     return render_template("feedback.html",island_name=island.name,slot=slot,was_correct=result["was_correct"],chosen_text=result["chosen_text"],correct_text=result["correct_text"],points_awarded=result["points"],progress=prog.progress,total=total,just_completed=result["just_completed"],was_replay=result.get("was_replay",False))
 
-
+#Shows the user the complete question and gives positive feedback on their correct answer.
 @app.route("/island/<int:slot>/complete", methods=["GET"])
 @login_required
 def island_complete(slot):
