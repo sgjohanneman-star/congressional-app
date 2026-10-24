@@ -120,7 +120,15 @@ class QuestionResult(db.Model):
     last_answered_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
     __table_args__ = (db.UniqueConstraint("user_id", "question_id", name="one_result_per_user_and_question"),)
 
+class SimulationResult(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
 
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+
+    scenario_key = db.Column(db.String(80), nullable=False)
+    points_awarded = db.Column(db.Integer, nullable=False, default=0)
+
+    __table_args__ = (db.UniqueConstraint("user_id","scenario_key", name="one_simulation_result_per_user_and_scenario"),)
 
 
 #Creating all databases when the program is run
@@ -339,8 +347,55 @@ def island_complete(slot):
         return redirect(url_for("island_question",slot=slot))
     return render_template("complete.html",island_name=island.name,slot=slot,progress=prog.progress,total=total,total_points=g.user.total_points)
 
+@app.route("/simulation", defaults={"scenario_key":"bank-alert"}, methods=["GET", "POST"])
+@app.route("/simulation/<scenario_key>", methods=["GET", "POST"])
+@login_required
+def simulation(scenario_key):
+    scenario_key = "bank-alert"
 
+    if request.method == "POST":
+        decision = request.form.get("decision")
 
+        #Check submitted answer on server
+        choice_points = {
+            "follow":0,
+            "report":10,
+            "contact":10,
+        }
+
+        if decision not in choice_points:
+            flash("Please select one of the available choices.", "error")
+            return redirect(url_for("simulation"))
+
+        points = choice_points[decision]
+
+        result = SimulationResult(user_id=g.user.id, scenario_key=scenario_key, points_awarded=points)
+
+        try:
+            db.session.add(result)
+            #Unique constraint prevents duplicates
+            db.session.flush()
+
+            #Update existing account points
+            db.session.execute(update(User).where(User.id == g.user.id).values(total_points=User.total_points+points))
+
+            #Save results
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+
+            existing = SimulationResult.query.filter_by(user_id=g.user.id, scenario_key=scenario_key).first()
+
+            if existing is None:
+                raise flash("You already completed this scenario. " "No additional points were added.", "info")
+            else:
+                flash(f"Scenario completed! {points} points added to your account.", "success")
+
+            return redirect(url_for("simulation"))
+
+    saved_result = SimulationResult.query.filter_by(user_id=g.user.id, scenario_key=scenario_key).first()
+
+    return render_template("simulation.html", saved_result=saved_result)
 
 #Runs the app if this is the main file run
 if(__name__ == "__main__"):

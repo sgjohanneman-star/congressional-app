@@ -8,6 +8,7 @@
   <meta name="theme-color" content="#08192c">
   <title>{% block title %}{% endblock %} · Wayfinder</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  {% block extra_css %}{% endblock %}
 </head>
 <body>
   <header class="topbar">

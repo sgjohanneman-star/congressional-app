@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}Project update — next steps{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='email.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="panel simulation-panel">
+  <a class="crumb" href="{{ url_for('hub') }}">← Back to islands</a>
+
+  <p class="island-label">Email simulation</p>
+  <p>This is a safe practice activity. Everything here is fictional.</p>
+
+  <div class="email">
+    <h1 class="subject">Action required: Your account is on hold</h1>
+
+    <section class="sender" aria-label="Message sender">
+      <div class="sender-avatar" aria-hidden="true">H</div>
+
+      <div class="sender-details">
+        <div class="sender-name">
+            Harbor Bank Support
+            <span class="sender-address">
+                &lt;support@harborbank-alerts.com&gt;
+            </span>
+        </div>
+        <div class="recipient">to me</div>
+      </div>
+
+      <time class="sent-time" datetime="2026-10-24T10:42">
+        October 24, 2026, at 4:06 AM
+      </time>
+    </section>
+
+    <article class="message-body">
+        <p>Hello,</p>
+
+        <p>
+            We detected unusual activity on your account and temporarily
+            restricted your access.
+        </p>
+
+        <p>
+            You must verify your account within 24 hours to prevent
+            further restrictions.
+        </p>
+
+        <a
+        class="email-verify-link"
+        href="#verify-feedback"
+        id="verify-button"
+        aria-controls="verify-feedback"
+        aria-expanded="false"
+        >
+            Verify my account
+        </a>
+        <div id="verify-feedback" hidden role="status">
+            <p><strong>You followed the email’s link. What happens next?</strong></p>
+            <p>
+                In a real scam, this could open a fake banking website
+                designed to collect your login details.
+                Clicking alone does not mean you have given those details away.
+            </p>
+            <p>
+                Notice the 24-hour deadline and the instruction not to contact
+                support. Both pressure you to act before checking.
+            </p>
+            <p>
+                A safer next step is to open your bank’s app yourself or call
+                the number on your bank card.
+            </p>
+        </div>
+
+        <p>
+            For your security, please complete verification before
+            contacting support.
+        </p>
+
+        <div class="signature">
+            Harbor Bank Support
+        </div>
+    </article>
+  </div>
+  <form id="decision-form" class="simulation-actions" method="POST" action="{{ url_for('simulation')}}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <fieldset class="question" {% if saved_result %}disabled{% endif %}>
+        <legend>How would you handle this email?</legend>
+
+        <label class="choice">
+        <input type="radio" name="decision" value="follow" required>
+        <span>Follow the email’s link</span>
+        </label>
+
+        <label class="choice">
+        <input type="radio" name="decision" value="report" required>
+        <span>Report as scam</span>
+        </label>
+
+        <label class="choice">
+        <input type="radio" name="decision" value="contact" required>
+        <span>Contact the bank independently</span>
+        </label>
+    </fieldset>
+
+    <button class="btn" type="submit" {% if saved_result %}disabled{% endif %}>Submit my choice</button>
+  </form>
+  {% if saved_result %}
+  <div id="decision-feedback" role="status">
+    <h2 id="decision-heading">Scenario completed</h2>
+
+    <p>
+        Points earned:
+        <strong id="decision-points">{{ saved_result.points_awarded }}</strong> / 10
+    </p>
+
+    {% if saved_result.points_awarded > 0 %}
+    <p>
+        You chose a safer respone. Reporting the suspicious email or contacting the bank independently helps you avoid its trap.
+    </p>
+    {% else %}
+    <p>
+        Following the link could lead to a fake banking website. Open your bank's app yourself or call the number on your card.
+    </p>
+    {% endif %}
+
+    <a class="crumb" href="{{ url_for('hub')}}">
+        Back to islands
+    </a>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const verifyLink = document.getElementById("verify-button");
+  const verifyFeedback = document.getElementById("verify-feedback");
+
+  verifyLink.addEventListener("click", function (event) {
+    event.preventDefault();
+    verifyFeedback.hidden = false;
+    verifyLink.setAttribute("aria-expanded", "true");
+  });
+</script>
+{% endblock %}
