@@ -14,6 +14,7 @@
   <header class="topbar">
     <a class="brand" href="{{ url_for('hub') }}">Wayfinder</a>
     <nav class="header-actions" aria-label="Main navigation">
+      <a class="btn btn-quiet" href="{{ url_for('sources') }}">Sources &amp; research</a>
       <a class="btn btn-quiet" href="{{ url_for('about') }}">About us</a>
       {% if session.get('user_id') %}
       <form method="POST" action="{{ url_for('logout') }}">

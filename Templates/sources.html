@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Sources and research{% endblock %}
+{% block content %}
+<article class="panel panel-wide sources-page">
+  <h1>Sources and research</h1>
+  <p>Explore the safety guidance behind our lessons and the research relevant to guided practice.</p>
+  <nav aria-label="Source sections"><a href="#guidance">Safety guidance</a> · <a href="#research">Learning research</a></nav>
+  <section id="guidance">
+    <h2>Safety guidance</h2>
+    <p>These CISA and FTC resources explain practical steps you can take. Links are provided for further reading, not as an endorsement of Wayfinder.</p>
+    {% for slot, guidance in topic_guidance.items() %}
+    <details class="source-details">
+      <summary>{{ guidance.title }}</summary>
+      <div class="source-content">
+        <p>{{ guidance.why }}</p>
+        <ul>{% for source in guidance.sources %}
+          <li><a href="{{ source.url }}" target="_blank" rel="noopener noreferrer">{{ source.title }} (new tab)</a></li>
+        {% endfor %}</ul>
+      </div>
+    </details>
+    {% endfor %}
+  </section>
+  <section id="research">
+    <h2>Why guided practice?</h2>
+    <p>Research explores how people recognize scams and learn safer habits. Findings vary across audiences and training methods. These studies evaluated other tools and settings; they do not prove that Wayfinder prevents scams.</p>
+    {% for paper in research %}
+    <details class="source-details">
+      <summary>{{ paper.title }}</summary>
+      <div class="source-content">
+        <p>{{ paper.citation }}</p>
+        <p><strong>What the study found:</strong> {{ paper.finding }}</p>
+        <p><strong>How it relates to Wayfinder:</strong> {{ paper.connection }}</p>
+        <a href="{{ paper.url }}" target="_blank" rel="noopener noreferrer">Read the research (new tab{% if paper.url.endswith('.pdf') %}, PDF{% endif %})</a>
+      </div>
+    </details>
+    {% endfor %}
+  </section>
+</article>
+{% endblock %}

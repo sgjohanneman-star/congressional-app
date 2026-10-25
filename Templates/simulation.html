@@ -121,6 +121,17 @@
 
     <button class="btn" type="submit" {% if saved_result %}disabled{% endif %}>Check my choice</button>
   </form>
+  <details class="source-details">
+    <summary>Why this advice?</summary>
+    <div class="source-content">
+      <p>{{ scenario.get('clues', 'The deadline and instruction to avoid support pressure you to act before checking. Contact the bank through its app or the number on your card.') }}</p>
+      <p>Read the guidance relevant to this scenario:</p>
+      <ul>{% for source in scenario.get('sources', []) %}
+        <li><a href="{{ source.url }}" target="_blank" rel="noopener noreferrer">{{ source.title }} (new tab)</a></li>
+      {% endfor %}</ul>
+      <a href="{{ url_for('sources') }}#research">Why we use guided practice</a>
+    </div>
+  </details>
   {% if saved_result %}
   <div id="decision-feedback" role="status">
     <h2 id="decision-heading">Scenario completed</h2>
@@ -141,16 +152,7 @@
     </p>
     {% endfor %}
 
-    {% if scenario.get("sources") %}
-    <details>
-      <summary>Learn more from the FTC</summary>
-      <ul>
-        {% for source in scenario["sources"] %}
-        <li><a href="{{ source['url'] }}" target="_blank" rel="noopener noreferrer">{{ source["title"] }} (opens a new tab)</a></li>
-        {% endfor %}
-      </ul>
-    </details>
-    {% endif %}
+
 
     {% if next_key %}
     <a class="btn" href="{{ url_for('simulation', scenario_key=next_key) }}">Next scenario</a>

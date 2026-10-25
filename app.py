@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from simulation_data import SCENARIOS
+from learning_sources import TOPIC_GUIDANCE, RESEARCH
 from sqlalchemy import update
 
 #Loading environment tools
@@ -202,6 +203,16 @@ def hub():
         islands=islands, simulations_completed=simulations_completed,
         simulations_total=simulations_total,
     )
+
+@app.context_processor
+def learning_source_context():
+    return {"topic_guidance": TOPIC_GUIDANCE}
+
+
+@app.route("/sources")
+def sources():
+    return render_template("sources.html", research=RESEARCH)
+
 
 @app.route("/about")
 def about():

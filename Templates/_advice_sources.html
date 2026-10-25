@@ -1,0 +1,16 @@
+{% set guidance = topic_guidance.get(slot) %}
+{% if guidance %}
+<details class="source-details">
+  <summary>Why this advice?</summary>
+  <div class="source-content">
+    <p>{{ guidance.why }}</p>
+    <p><strong>Reading for this island: {{ guidance.title }}</strong></p>
+    <ul>
+      {% for source in guidance.sources %}
+      <li><a href="{{ source.url }}" target="_blank" rel="noopener noreferrer">{{ source.title }} (new tab)</a></li>
+      {% endfor %}
+    </ul>
+    <a href="{{ url_for('sources') }}#research">Why we use guided practice</a>
+  </div>
+</details>
+{% endif %}
