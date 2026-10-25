@@ -20,9 +20,18 @@ def seed():
                 raise ValueError(f"'correct' index out of range: {q['text']}")
 
             question = Question.query.filter_by(island_id=island.id, text=q["text"]).first()
+            # Reuse renamed questions so existing answers and progress keep their IDs.
+            if question is None:
+                for previous_text in q.get("previous_texts", []):
+                    question = Question.query.filter_by(
+                        island_id=island.id, text=previous_text
+                    ).first()
+                    if question is not None:
+                        break
             if question is None:
                 question = Question(island_id=island.id, text=q["text"])
                 db.session.add(question)
+            question.text = q["text"]
             question.choices = choices
             question.correct_answer = q["correct"]
 

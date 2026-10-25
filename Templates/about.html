@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}About us{% endblock %}
+
+{% block content %}
+<article class="panel about-page" aria-labelledby="about-title">
+  <a class="crumb" href="{{ url_for('hub') }}">← Back to islands</a>
+  <h1 id="about-title">About us</h1>
+  <p class="lead">Meet the team behind Wayfinder.</p>
+
+  <section class="about-section" aria-labelledby="mission-title">
+    <h2 id="mission-title">Our mission</h2>
+    <p>Wayfinder helps people build confidence online through internet-safety
+      lessons and guided practice. Our islands and simulations offer a place
+      to explore everyday situations, make choices, and learn from feedback.</p>
+  </section>
+
+  <!-- Replace the bracketed text with your own words. These are page-content
+       placeholders, not a form. Save this file to update the page. -->
+  <section class="about-section" aria-labelledby="story-title">
+    <h2 id="story-title">Why we built Wayfinder</h2>
+    <p>[Tell visitors what inspired your team. Was there a conversation,
+      personal experience, or problem in your community that started the idea?]</p>
+    <p>[Describe who you hope to help and what you want them to feel more
+      confident doing after using Wayfinder.]</p>
+  </section>
+
+  <section class="about-section" aria-labelledby="team-title">
+    <h2 id="team-title">Meet our team</h2>
+    <div class="about-team">
+      <!-- Copy a whole article below to add another teammate, or remove one
+           if your team has fewer members. -->
+      <article class="about-person">
+        <h3>[Team member 1 name]</h3>
+        <p class="about-role">[Role or main area of work]</p>
+        <p><strong>About me:</strong> [Introduce yourself and your interests.]</p>
+        <p><strong>My contribution:</strong> [Explain what you created,
+          researched, designed, or tested.]</p>
+        <p><strong>What I learned:</strong> [Share one thing this project taught you.]</p>
+      </article>
+
+      <article class="about-person">
+        <h3>[Team member 2 name]</h3>
+        <p class="about-role">[Role or main area of work]</p>
+        <p><strong>About me:</strong> [Introduce yourself and your interests.]</p>
+        <p><strong>My contribution:</strong> [Explain what you created,
+          researched, designed, or tested.]</p>
+        <p><strong>What I learned:</strong> [Share one thing this project taught you.]</p>
+      </article>
+
+      <article class="about-person">
+        <h3>[Team member 3 name]</h3>
+        <p class="about-role">[Role or main area of work]</p>
+        <p><strong>About me:</strong> [Introduce yourself and your interests.]</p>
+        <p><strong>My contribution:</strong> [Explain what you created,
+          researched, designed, or tested.]</p>
+        <p><strong>What I learned:</strong> [Share one thing this project taught you.]</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="about-section" aria-labelledby="process-title">
+    <h2 id="process-title">How we built it</h2>
+    <p>[Describe how your team divided the work, checked the lesson content,
+      and tested the app. Include any feedback that helped you improve it.]</p>
+  </section>
+
+  <section class="about-section" aria-labelledby="thanks-title">
+    <h2 id="thanks-title">Credits and thanks</h2>
+    <p>[Credit the original codebase and its creators, your information sources,
+      any mentors or testers, and the tools—including AI tools—that helped
+      you build the project. Explain how you used them.]</p>
+  </section>
+</article>
+{% endblock %}

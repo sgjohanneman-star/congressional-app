@@ -1,0 +1,49 @@
+<section class="popup-simulation" aria-label="Simulated browser window">
+  <div class="practice-browser-bar">
+    <span aria-hidden="true">◉ ◉ ◉</span>
+    <span>Practice browser</span>
+    <strong>Simulation</strong>
+  </div>
+  <div class="practice-browser-page">
+    <p class="practice-browser-caption">A warning interrupts your browsing.</p>
+
+    <section id="simulated-warning" class="practice-warning" aria-labelledby="warning-title">
+      <div class="practice-warning-banner">
+        <span aria-hidden="true">⚠</span>
+        {{ scenario["sender_name"] }}
+      </div>
+      <div class="practice-warning-content">
+        <h1 id="warning-title">{{ scenario["subject"] }}</h1>
+        {% for paragraph in scenario["paragraphs"] %}
+        <p>{{ paragraph }}</p>
+        {% endfor %}
+        <div class="practice-warning-actions">
+          {% for interaction_key, interaction in scenario["interactions"].items() %}
+          <button type="button" class="practice-warning-action"
+                  data-simulation-action
+                  {% if interaction.get("dismiss") %}data-dismiss-warning{% endif %}
+                  aria-controls="feedback-{{ interaction_key }}" aria-expanded="false">
+            {{ interaction["label"] }}
+          </button>
+          {% endfor %}
+        </div>
+        <p class="practice-warning-signature">{{ scenario["closing"] }}</p>
+      </div>
+    </section>
+
+    <button type="button" id="reopen-warning" class="practice-warning-action" hidden>
+      Show the practice warning again
+    </button>
+  </div>
+</section>
+
+<div class="popup-feedback-list">
+  {% for interaction_key, interaction in scenario["interactions"].items() %}
+  <div id="feedback-{{ interaction_key }}" class="interaction-feedback" hidden role="status">
+    <p><strong>{{ interaction["label"] }} — feedback</strong></p>
+    {% for paragraph in interaction["feedback"] %}
+    <p>{{ paragraph }}</p>
+    {% endfor %}
+  </div>
+  {% endfor %}
+</div>

@@ -131,4 +131,11 @@ The README.md file was written by me, then reviewed by Claude, with specific fee
 Afterwards, each of these files was confirmed and added to the project.
 
 ## CISA Sources
-
+https://www.cisa.gov/cybersecurity-awareness-month
+https://www.cisa.gov/resources-tools/training/cyb3rsmrt-use-password-manager-create-and-remember-strong-passwords
+https://www.cisa.gov/topics/cybersecurity-best-practices
+https://consumer.ftc.gov/articles/how-spot-avoid-and-report-tech-support-scams
+https://consumer.ftc.gov/articles/how-recognize-avoid-phishing-scams
+https://consumer.ftc.gov/consumer-alerts/2025/02/looking-love-watch-out-scammers
+https://consumer.ftc.gov/articles/buying-online-marketplace
+https://consumer.ftc.gov/articles/what-do-if-you-were-scammed

@@ -1,29 +1,64 @@
 {% extends "base.html" %}
 
-{% block title %}Project update — next steps{% endblock %}
+{% block title %}{{ scenario["subject"] }}{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='email.css') }}">
+{% if scenario.get("type", "email") == "popup" %}
+<link rel="stylesheet" href="{{ url_for('static', filename='simulation-popup.css') }}">
+{% elif scenario.get("type") in ["sms", "chat"] %}
+<link rel="stylesheet" href="{{ url_for('static', filename='simulation-chat.css') }}">
+{% endif %}
 {% endblock %}
 
 {% block content %}
 <section class="panel simulation-panel">
   <a class="crumb" href="{{ url_for('hub') }}">← Back to islands</a>
 
-  <p class="island-label">Email simulation</p>
+  {% set format_labels = {"email": "Email simulation", "popup": "Browser warning simulation", "sms": "Text message simulation", "chat": "Chat simulation"} %}
+  <p class="island-label">{{ format_labels.get(scenario.get("type", "email"), "Practice simulation") }}</p>
   <p>This is a safe practice activity. Everything here is fictional.</p>
+  <p><strong>Explore first, then choose.</strong> Try the actions to see what happens.
+    You can read the hints before answering. When you’re ready, submit your choice below.
+    Points are awarded once per scenario.</p>
+  <nav class="simulation-nav" aria-label="Browse simulations">
+    {% if previous_scenario_key %}
+    <a class="btn btn-secondary" href="{{ url_for('simulation', scenario_key=previous_scenario_key) }}" aria-label="Previous simulation"><span aria-hidden="true">←</span> Previous</a>
+    {% else %}
+    <button class="btn btn-secondary" type="button" disabled><span aria-hidden="true">←</span> Previous</button>
+    {% endif %}
 
+    <p class="simulation-nav-status">Scenario {{ scenario_number }} of {{ scenario_count }}<br>
+      <span>{{ completed_count }} completed</span>
+    </p>
+
+    {% if next_scenario_key %}
+    <a class="btn btn-secondary" href="{{ url_for('simulation', scenario_key=next_scenario_key) }}" aria-label="Next simulation">Next <span aria-hidden="true">→</span></a>
+    {% else %}
+    <button class="btn btn-secondary" type="button" disabled>Next <span aria-hidden="true">→</span></button>
+    {% endif %}
+  </nav>
+
+  {% if scenario.get("context") %}
+  <p><strong>Your situation:</strong> {{ scenario["context"] }}</p>
+  {% endif %}
+
+  {% if scenario.get("type", "email") == "popup" %}
+    {% include "_simulation_popup.html" %}
+  {% elif scenario.get("type") in ["sms", "chat"] %}
+    {% include "_simulation_chat.html" %}
+  {% else %}
   <div class="email">
-    <h1 class="subject">Action required: Your account is on hold</h1>
+    <h1 class="subject">{{ scenario["subject"] }}</h1>
 
     <section class="sender" aria-label="Message sender">
-      <div class="sender-avatar" aria-hidden="true">H</div>
+      <div class="sender-avatar" aria-hidden="true">{{ scenario["avatar"] }}</div>
 
       <div class="sender-details">
         <div class="sender-name">
-            Harbor Bank Support
+            {{ scenario["sender_name"] }}
             <span class="sender-address">
-                &lt;support@harborbank-alerts.com&gt;
+                &lt;{{ scenario["sender_address"] }}&gt;
             </span>
         </div>
         <div class="recipient">to me</div>
@@ -35,76 +70,56 @@
     </section>
 
     <article class="message-body">
-        <p>Hello,</p>
+        {% for paragraph in scenario["paragraphs"] %}
+            <p>{{ paragraph }}</p>
+        {% endfor %}
 
-        <p>
-            We detected unusual activity on your account and temporarily
-            restricted your access.
-        </p>
+        {% for interaction_key, interaction in scenario["interactions"].items() %}
+          <a
+            class="email-verify-link"
+            href="#feedback-{{ interaction_key }}"
+            data-simulation-action
+            aria-controls="feedback-{{ interaction_key }}"
+            aria-expanded="false"
+          >
+            {{ interaction["label"] }}
+          </a>
 
-        <p>
-            You must verify your account within 24 hours to prevent
-            further restrictions.
-        </p>
+          <div
+            id="feedback-{{ interaction_key }}"
+            class="interaction-feedback"
+            hidden
+            role="status"
+          >
+            <p><strong>{{ interaction["label"] }} — feedback</strong></p>
+            {% for paragraph in interaction["feedback"] %}
+              <p>{{ paragraph }}</p>
+            {% endfor %}
+          </div>
+        {% endfor %}
 
-        <a
-        class="email-verify-link"
-        href="#verify-feedback"
-        id="verify-button"
-        aria-controls="verify-feedback"
-        aria-expanded="false"
-        >
-            Verify my account
-        </a>
-        <div id="verify-feedback" hidden role="status">
-            <p><strong>You followed the email’s link. What happens next?</strong></p>
-            <p>
-                In a real scam, this could open a fake banking website
-                designed to collect your login details.
-                Clicking alone does not mean you have given those details away.
-            </p>
-            <p>
-                Notice the 24-hour deadline and the instruction not to contact
-                support. Both pressure you to act before checking.
-            </p>
-            <p>
-                A safer next step is to open your bank’s app yourself or call
-                the number on your bank card.
-            </p>
-        </div>
-
-        <p>
-            For your security, please complete verification before
-            contacting support.
-        </p>
+        <p>{{ scenario["closing"] }}</p>
 
         <div class="signature">
-            Harbor Bank Support
+            {{ scenario["sender_name"] }}
         </div>
     </article>
   </div>
-  <form id="decision-form" class="simulation-actions" method="POST" action="{{ url_for('simulation')}}">
+  {% endif %}
+  <form id="decision-form" class="simulation-actions" method="POST" action="{{ url_for('simulation', scenario_key=scenario_key)}}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <fieldset class="question" {% if saved_result %}disabled{% endif %}>
-        <legend>How would you handle this email?</legend>
+        <legend>{{ scenario.get("decision_prompt", "How would you handle this email?") }}</legend>
 
+        {% for choice_key, choice in scenario["choices"].items() %}
         <label class="choice">
-        <input type="radio" name="decision" value="follow" required>
-        <span>Follow the email’s link</span>
+            <input type="radio" name="decision" value="{{ choice_key}}" required>
+            <span>{{ choice["label"] }}</span>
         </label>
-
-        <label class="choice">
-        <input type="radio" name="decision" value="report" required>
-        <span>Report as scam</span>
-        </label>
-
-        <label class="choice">
-        <input type="radio" name="decision" value="contact" required>
-        <span>Contact the bank independently</span>
-        </label>
+        {% endfor %}
     </fieldset>
 
-    <button class="btn" type="submit" {% if saved_result %}disabled{% endif %}>Submit my choice</button>
+    <button class="btn" type="submit" {% if saved_result %}disabled{% endif %}>Check my choice</button>
   </form>
   {% if saved_result %}
   <div id="decision-feedback" role="status">
@@ -115,14 +130,33 @@
         <strong id="decision-points">{{ saved_result.points_awarded }}</strong> / 10
     </p>
 
-    {% if saved_result.points_awarded > 0 %}
-    <p>
-        You chose a safer respone. Reporting the suspicious email or contacting the bank independently helps you avoid its trap.
+    {% if scenario.get("clues") %}
+    <p><strong>Clues to notice:</strong> {{ scenario["clues"] }}</p>
+    {% endif %}
+
+    <h3>Review the choices</h3>
+    {% for choice in scenario["choices"].values() %}
+    <p><strong>{{ choice["label"] }} ({{ choice["points"] }} points)</strong><br>
+      {{ choice["feedback"] }}
     </p>
-    {% else %}
-    <p>
-        Following the link could lead to a fake banking website. Open your bank's app yourself or call the number on your card.
-    </p>
+    {% endfor %}
+
+    {% if scenario.get("sources") %}
+    <details>
+      <summary>Learn more from the FTC</summary>
+      <ul>
+        {% for source in scenario["sources"] %}
+        <li><a href="{{ source['url'] }}" target="_blank" rel="noopener noreferrer">{{ source["title"] }} (opens a new tab)</a></li>
+        {% endfor %}
+      </ul>
+    </details>
+    {% endif %}
+
+    {% if next_key %}
+    <a class="btn" href="{{ url_for('simulation', scenario_key=next_key) }}">Next scenario</a>
+    {% elif completed_count == scenario_count %}
+    <h3>Practice complete!</h3>
+    <p>You completed all {{ scenario_count }} scenarios and earned {{ lesson_points }} out of {{ scenario_count * 10 }} points.</p>
     {% endif %}
 
     <a class="crumb" href="{{ url_for('hub')}}">
@@ -135,13 +169,35 @@
 
 {% block scripts %}
 <script>
-  const verifyLink = document.getElementById("verify-button");
-  const verifyFeedback = document.getElementById("verify-feedback");
+  const actionLinks = document.querySelectorAll("[data-simulation-action]");
 
-  verifyLink.addEventListener("click", function (event) {
-    event.preventDefault();
-    verifyFeedback.hidden = false;
-    verifyLink.setAttribute("aria-expanded", "true");
+  actionLinks.forEach(function (link) {
+    link.addEventListener("click", function (event) {
+      event.preventDefault();
+
+      const feedbackId = link.getAttribute("aria-controls");
+      const feedback = document.getElementById(feedbackId);
+
+      feedback.hidden = false;
+      link.setAttribute("aria-expanded", "true");
+
+      if (link.hasAttribute("data-dismiss-warning")) {
+        document.getElementById("simulated-warning").hidden = true;
+        const reopenButton = document.getElementById("reopen-warning");
+        reopenButton.hidden = false;
+        reopenButton.focus();
+      }
+    });
   });
+
+  const reopenButton = document.getElementById("reopen-warning");
+  if (reopenButton) {
+    reopenButton.addEventListener("click", function () {
+      const warning = document.getElementById("simulated-warning");
+      warning.hidden = false;
+      reopenButton.hidden = true;
+      warning.querySelector("[data-simulation-action]").focus();
+    });
+  }
 </script>
 {% endblock %}

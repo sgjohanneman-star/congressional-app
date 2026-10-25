@@ -881,7 +881,7 @@
   color: #0842a0;
 }
 
-.email #verify-feedback {
+.email .interaction-feedback {
   margin: 0 0 24px;
   padding: 20px;
   background: #fff8e6;
@@ -891,6 +891,50 @@
   border-radius: 8px;
 }
 
-.email #verify-feedback p:last-child {
+.email .interaction-feedback p:last-child {
   margin-bottom: 0;
+}
+
+/* Lesson browsing remains available after completion. */
+.simulation-panel .simulation-nav {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  margin: 24px 0;
+}
+
+.simulation-panel .simulation-nav .btn {
+  width: auto;
+  gap: 8px;
+}
+
+.simulation-panel .simulation-nav .btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+  background: transparent;
+  border-color: var(--line);
+}
+
+.simulation-panel .simulation-nav-status {
+  margin: 0;
+  text-align: center;
+  font-weight: 600;
+}
+
+.simulation-panel .simulation-nav-status span {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+
+@media (max-width: 480px) {
+  .simulation-panel .simulation-nav {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .simulation-panel .simulation-nav-status {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
 }

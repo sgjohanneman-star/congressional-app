@@ -1,0 +1,41 @@
+<section class="chat-simulation chat-simulation--{{ scenario['type'] }}" aria-labelledby="conversation-title">
+  <div class="practice-chat-bar">
+    <span>{{ scenario.get("platform", "Messages") }}</span>
+    <strong>Simulation</strong>
+  </div>
+  <header class="practice-chat-contact">
+    <span class="practice-chat-avatar" aria-hidden="true">{{ scenario["avatar"] }}</span>
+    <div>
+      <h1 id="conversation-title">{{ scenario["sender_name"] }}</h1>
+      <p>{{ scenario["sender_detail"] }}</p>
+    </div>
+  </header>
+  <ol class="practice-chat-messages" aria-label="Conversation">
+    {% for message in scenario["messages"] %}
+    <li class="practice-chat-message practice-chat-message--{{ message['from'] }}">
+      <span class="practice-chat-speaker">{{ "You" if message["from"] == "you" else scenario["sender_name"] }}</span>
+      <p>{{ message["text"] }}</p>
+    </li>
+    {% endfor %}
+  </ol>
+  <div class="practice-chat-actions" aria-label="Explore this conversation">
+    <p>Try an action</p>
+    {% for interaction_key, interaction in scenario["interactions"].items() %}
+    <button type="button" data-simulation-action
+            aria-controls="feedback-{{ interaction_key }}" aria-expanded="false">
+      {{ interaction["label"] }}
+    </button>
+    {% endfor %}
+  </div>
+</section>
+
+<div class="chat-feedback-list">
+  {% for interaction_key, interaction in scenario["interactions"].items() %}
+  <div id="feedback-{{ interaction_key }}" class="interaction-feedback" hidden role="status">
+    <p><strong>{{ interaction["label"] }} — feedback</strong></p>
+    {% for paragraph in interaction["feedback"] %}
+    <p>{{ paragraph }}</p>
+    {% endfor %}
+  </div>
+  {% endfor %}
+</div>

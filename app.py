@@ -1,5 +1,5 @@
 #App File
-from flask import Flask, session, request, redirect, url_for, render_template, flash, g
+from flask import Flask, session, request, redirect, url_for, render_template, flash, g, abort
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect, CSRFError
 from datetime import datetime,timezone,timedelta
@@ -11,6 +11,7 @@ from sqlalchemy.exc import IntegrityError
 from dotenv import load_dotenv
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from simulation_data import SCENARIOS
 from sqlalchemy import update
 
 #Loading environment tools
@@ -190,7 +191,22 @@ def hub():
         })
     db.session.commit()
     
-    return render_template("hub.html", username=g.user.username,total_points=g.user.total_points, islands=islands)
+    simulations_total = len(SCENARIOS)
+    simulations_completed = SimulationResult.query.filter(
+        SimulationResult.user_id == g.user.id,
+        SimulationResult.scenario_key.in_(list(SCENARIOS)),
+    ).count()
+
+    return render_template(
+        "hub.html", username=g.user.username, total_points=g.user.total_points,
+        islands=islands, simulations_completed=simulations_completed,
+        simulations_total=simulations_total,
+    )
+
+@app.route("/about")
+def about():
+    return render_template("about.html")
+
 
 #Registration for the application, saves username and hashed password inputted
 @app.route("/register", methods=["GET","POST"])
@@ -351,21 +367,22 @@ def island_complete(slot):
 @app.route("/simulation/<scenario_key>", methods=["GET", "POST"])
 @login_required
 def simulation(scenario_key):
-    scenario_key = "bank-alert"
+    scenario = SCENARIOS.get(scenario_key)
+
+    if scenario is None:
+        abort(404)
 
     if request.method == "POST":
         decision = request.form.get("decision")
 
         #Check submitted answer on server
         choice_points = {
-            "follow":0,
-            "report":10,
-            "contact":10,
+            key: choice["points"] for key, choice in scenario["choices"].items()
         }
 
         if decision not in choice_points:
             flash("Please select one of the available choices.", "error")
-            return redirect(url_for("simulation"))
+            return redirect(url_for("simulation", scenario_key=scenario_key))
 
         points = choice_points[decision]
 
@@ -384,18 +401,43 @@ def simulation(scenario_key):
         except IntegrityError:
             db.session.rollback()
 
-            existing = SimulationResult.query.filter_by(user_id=g.user.id, scenario_key=scenario_key).first()
+            existing = SimulationResult.query.filter_by(user_id=g.user.id,scenario_key=scenario_key,).first()
 
             if existing is None:
-                raise flash("You already completed this scenario. " "No additional points were added.", "info")
-            else:
-                flash(f"Scenario completed! {points} points added to your account.", "success")
+                raise
 
-            return redirect(url_for("simulation"))
+            flash("You already completed this scenario. No additional points were added.", "info")
+        else:
+            flash(f"Scenario completed! {points} points added to your account.", "success")
+
+        return redirect(url_for("simulation", scenario_key=scenario_key))
 
     saved_result = SimulationResult.query.filter_by(user_id=g.user.id, scenario_key=scenario_key).first()
 
-    return render_template("simulation.html", saved_result=saved_result)
+    scenario_keys = list(SCENARIOS)
+    scenario_index = scenario_keys.index(scenario_key)
+    completed = SimulationResult.query.filter(
+        SimulationResult.user_id == g.user.id,
+        SimulationResult.scenario_key.in_(scenario_keys),
+    ).all()
+    completed_keys = {result.scenario_key for result in completed}
+    # Continue in order; if earlier lessons were skipped, return to those next.
+    remaining_keys = scenario_keys[scenario_index + 1:] + scenario_keys[:scenario_index]
+    next_key = next((key for key in remaining_keys if key not in completed_keys), None)
+
+    return render_template(
+        "simulation.html",
+        saved_result=saved_result,
+        scenario=scenario,
+        scenario_key=scenario_key,
+        scenario_number=scenario_index + 1,
+        scenario_count=len(scenario_keys),
+        previous_scenario_key=scenario_keys[scenario_index - 1] if scenario_index > 0 else None,
+        next_scenario_key=scenario_keys[scenario_index + 1] if scenario_index + 1 < len(scenario_keys) else None,
+        completed_count=len(completed),
+        lesson_points=sum(result.points_awarded for result in completed),
+        next_key=next_key,
+    )
 
 #Runs the app if this is the main file run
 if(__name__ == "__main__"):

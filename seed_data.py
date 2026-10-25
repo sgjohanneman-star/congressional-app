@@ -8,7 +8,7 @@ ISLANDS = [
             "text": "What makes a password strong and difficult for someone else to guess?",
             "choices": [
                 "It is short so it is easy to remember",
-                "It is long and mixes unrelated words, numbers, and symbols",
+                "It has at least 16 characters, uses random characters or unrelated words, and is unique to that account",
                 "It uses only lowercase letters",
                 "It is a common word like 'password' with a 1 at the end"
             ],
@@ -39,7 +39,7 @@ ISLANDS = [
             "choices": [
                 "Use your name followed by 123",
                 "Change one letter of your old password each time",
-                "Join several random words into a long phrase and add numbers or symbols",
+                "Use a unique passphrase of 5 to 7 unrelated words, at least 16 characters long, and store it in a password manager",
                 "Ask a friend to choose one for you"
             ],
             "correct": 2
@@ -88,7 +88,7 @@ ISLANDS = [
             "text": "How can two-factor authentication help protect your accounts?",
             "choices": [
                 "It means you no longer need a password",
-                "It adds a second step, like a code sent to your phone, so a stolen password alone is not enough",
+                "It adds another check beyond your password; use a phishing-resistant option such as a security key when available",
                 "It automatically removes viruses from your computer",
                 "It lets you safely share your account with others"
             ],
@@ -194,7 +194,7 @@ ISLANDS = [
         {
             "text": "How can you check whether an online form or website is legitimate before entering payment information?",
             "choices": [
-                "Check that the address is spelled correctly, starts with https, and belongs to a company you recognize",
+                "Verify the actual website address and research the business independently; use HTTPS, but remember it does not prove a site is honest",
                 "Trust any site that appeared in an advertisement",
                 "Enter your card number to see if anything looks wrong",
                 "Trust any site with a low price"
@@ -269,12 +269,12 @@ ISLANDS = [
             "correct": 2
         },
         {
-            "text": "What would you do if someone claiming to be technical support asked for remote access to your computer?",
+            "text":  "Someone unexpectedly calls claiming to be technical support, should you give them remote access to your computer?",
             "choices": [
                 "Allow it, since they are offering to help for free",
                 "Allow it if they sound friendly and patient",
                 "Allow it, but only for a few minutes",
-                "Refuse and hang up, because real tech companies do not call you out of the blue asking for access"
+                "Refuse and hang up, because real tech companies do not call you out of the blue asking for access."
             ],
             "correct": 3
         },
@@ -339,20 +339,41 @@ ISLANDS = [
             "correct": 0
         },
         {
-            "text": "What should you do if you have already clicked a suspicious link or given a scammer your information?",
+            "text": "You clicked a suspicious link and think it downloaded harmful software. What should you do?",
+            "previous_texts": ["What should you do if you have already clicked a suspicious link or given a scammer your information?"],
             "choices": [
                 "Do nothing and hope nothing happens",
                 "Delete the message and forget about it",
-                "Act quickly: change your passwords, contact your bank, watch your accounts, and report the scam",
+                "Update security software you already trust, run a scan, follow its removal instructions, and seek trusted help if needed",
                 "Reply to the scammer to ask for your information back"
             ],
             "correct": 2
         },
         {
+            "text": "You entered your password on a fake login page. What should you do?",
+            "choices": [
+                "Wait until someone locks you out",
+                "Through the real app or website, change the exposed password and any reused passwords, enable MFA, and check for unauthorized activity",
+                "Ask the fake website to delete your password",
+                "Only delete the message that brought you there"
+            ],
+            "correct": 1
+        },
+        {
+            "text": "You gave a scammer your card or bank details, or sent them money. What should you do?",
+            "choices": [
+                "Keep paying if they promise a refund",
+                "Wait a month before checking your accounts",
+                "Pay someone who guarantees they can recover the money",
+                "Contact your bank or payment provider immediately using known contact details, ask how to secure the account and recover the payment, and report the scam"
+            ],
+            "correct": 3
+        },
+        {
             "text": "Why is it safer to contact a company using the phone number on its official website or your bank card rather than a number in an unexpected message?",
             "choices": [
                 "Official numbers are always free",
-                "A number you find yourself is known to reach the real company, while one in a message could connect you to a scammer",
+                "Contact details on your bank card, statement, or a website you already know is genuine help you avoid a scammer; search ads can show fake numbers",
                 "Companies only answer calls from their official numbers",
                 "Numbers in messages are never answered"
             ],
@@ -428,7 +449,7 @@ ISLANDS = [
         {
             "text": "Why is it important to install updates for your computer, phone, browser, and apps?",
             "choices": [
-                "They fix security weaknesses that criminals could use to get in",
+                "They fix security weaknesses; enable automatic updates and install them promptly through device settings or trusted vendors",
                 "They make your device look older",
                 "They delete your old files to free up space",
                 "They only change the colors and icons"
@@ -543,12 +564,13 @@ ISLANDS = [
     "description": "Learn to protect your money when shopping, banking, and paying online.",
     "questions": [
         {
-            "text": "What should you check before sending money to someone you met online?",
+            "text": "Someone you met on a dating app, but have never met in person, asks you for money. What should you do?",
+            "previous_texts": ["What should you check before sending money to someone you met online?"],
             "choices": [
                 "That their profile photo looks friendly",
                 "That they have been messaging you every day",
                 "That their story explains why they need the money",
-                "Be very careful: never send money to someone you have only met online, and talk to a trusted friend or family member first"
+                "Do not send money or gifts to a romantic interest you have never met in person; pause and talk to someone you trust"
             ],
             "correct": 3
         },
@@ -556,7 +578,7 @@ ISLANDS = [
             "text": "Why should you be cautious about requests to pay using gift cards, cryptocurrency, or wire transfers?",
             "choices": [
                 "They are slower than bank cards",
-                "Scammers prefer them because the money is hard to trace and almost impossible to get back",
+                "These payments can be difficult to reverse; if you were scammed, contact the payment provider immediately and ask whether recovery is possible",
                 "Only criminals are allowed to use them",
                 "They always cost the buyer extra fees"
             ],

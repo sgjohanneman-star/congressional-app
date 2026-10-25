@@ -35,12 +35,19 @@
       {% include "_island.html" %}
       <h1 id="hub-title">Welcome, {{ username }}</h1>
       <p class="lead">Choose an island that needs your help.</p>
+      <p class="home-stat">Total points: <strong>{{ total_points }}</strong></p>
 
       <p class="home-stat">Islands restored: <strong>{{ restored }} of {{ count }}</strong></p>
       <progress class="meter" value="{{ restored }}" max="{{ count or 1 }}"
                 aria-label="Islands restored">{{ restored }} of {{ count }}</progress>
-
-      <p class="home-stat">Total points: <strong>{{ total_points }}</strong></p>
+      <p class="home-stat" id="simulation-progress-label">
+        Simulations completed: <strong>{{ simulations_completed }} of {{ simulations_total }}</strong>
+      </p>
+      <progress class="meter" value="{{ simulations_completed }}" max="{{ simulations_total or 1 }}"
+                aria-labelledby="simulation-progress-label">{{ simulations_completed }} of {{ simulations_total }}</progress>
+      <div class="actions">
+        <a class="btn" href="{{ url_for('simulation') }}">Practice scam simulations</a>
+      </div>
     </section>
 
     {% if islands %}
